@@ -24,6 +24,20 @@ app.post('/todos', function(request, response)
   });
 });
 
+app.get('/todos', function(request, response)
+{
+  Todo.find().then(function(todos)
+  {
+    response.send(
+    {
+      todos: todos // easier to send as an object if ever I need to tack something on
+    });
+  }, function(error)
+  {
+    response.status(400).send(error);
+  }); // returns every todo
+});
+
 app.listen(3000, function()
 {
   console.log('Started on port 3000');
