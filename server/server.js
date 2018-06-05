@@ -1,5 +1,6 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var {ObjectID} = require('mongodb');
 
 var {mongoose} = require('./db/mongoose.js');
 var {Todo} = require('./models/todo.js');
@@ -36,6 +37,31 @@ app.get('/todos', function(request, response)
   {
     response.status(400).send(error);
   }); // returns every todo
+});
+
+app.get('/todos/:id', function(request, response)
+{
+  var id = request.params.id; // request.params returns key value pair where key is :id variable and value is whatever you assign to it
+
+  if(!ObjectID.isValid(id))
+  {
+    return response.status(404).send();
+  }
+
+  Todo.findById(id).then(function(todo) // returns one object
+  {
+    if(!todo)
+    {
+      return response.status(404).send();
+    }
+
+    response.send({
+    todo: todo
+  });
+  }).catch(function(error)
+  {
+    response.status(400).send();
+  });
 });
 
 app.listen(3000, function()
