@@ -65,6 +65,30 @@ app.get('/todos/:id', function(request, response)
   });
 });
 
+app.delete('/todos/:id', function(request, response)
+{
+  var id = request.params.id; // request.params returns key value pair where key is :id variable and value is whatever you assign to it
+
+  if(!ObjectID.isValid(id))
+  {
+    return response.status(404).send();
+  }
+
+  Todo.findByIdAndRemove(id).then(function(todo) // returns one object - the todo deleted
+  {
+    if(!todo)
+    {
+      return response.status(404).send();
+    }
+
+    response.send(todo);
+
+  }).catch(function(error)
+  {
+    response.status(400).send();
+  });
+});
+
 app.listen(port, function()
 {
   console.log(`Started up at port ${port}`);
