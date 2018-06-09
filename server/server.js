@@ -81,7 +81,9 @@ app.delete('/todos/:id', function(request, response)
       return response.status(404).send();
     }
 
-    response.send(todo);
+    response.send({
+    todo: todo
+  });
 
   }).catch(function(error)
   {
