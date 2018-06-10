@@ -1,6 +1,7 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-var {ObjectID} = require('mongodb');
+const _ = require('lodash');
+const express = require('express');
+const bodyParser = require('body-parser');
+const {ObjectID} = require('mongodb');
 
 var {mongoose} = require('./db/mongoose.js');
 var {Todo} = require('./models/todo.js');
@@ -84,6 +85,43 @@ app.delete('/todos/:id', function(request, response)
     response.send({
     todo: todo
   });
+
+  }).catch(function(error)
+  {
+    response.status(400).send();
+  });
+});
+
+app.patch('/todos/:id', function(request, response)
+{
+  var id = request.params.id;
+  var body = _.pick(request.body, ['text', 'completed']); // pick is a function that allows you to specify the ONLY properties user can modify on todo ObjectID
+
+  if(!ObjectID.isValid(id))
+  {
+    return response.status(404).send();
+  }
+
+  if(_.isBoolean(body.completed) && body.completed == true)
+  {
+    body.completedAt = new Date().getTime(); // returns JavaScript time stamp
+  }
+
+  else {
+    body.completed = false;
+    body.completedAt = null
+  }
+
+  Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then(function(todo)
+  {
+    if(!todo)
+    {
+      return response.status(404).send();
+    }
+
+    response.send({
+      todo: todo
+    });
 
   }).catch(function(error)
   {
