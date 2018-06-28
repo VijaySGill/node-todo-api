@@ -131,6 +131,21 @@ app.patch('/todos/:id', function(request, response)
   });
 });
 
+app.post('/users', function(request, response)
+{
+  var body = _.pick(request.body, ['email', 'password']);
+
+  var user = new User(body);
+
+  user.save().then(function(document)
+  {
+    response.send(document);
+  }).catch(function(error)
+  {
+    response.status(400).send(error);
+  });
+});
+
 app.listen(port, function()
 {
   console.log(`Started up at port ${port}`);

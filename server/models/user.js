@@ -9,7 +9,7 @@ var User = mongoose.model('User', {
     trim: true,
     unique: true, // 2 users can't have same email
     validate: {
-      validator: validator.isEmail(value),
+      validator: validator.isEmail,
       message: '{VALUE} is not a valid email address'
     }
   },
