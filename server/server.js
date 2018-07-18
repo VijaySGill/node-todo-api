@@ -134,12 +134,14 @@ app.patch('/todos/:id', function(request, response)
 app.post('/users', function(request, response)
 {
   var body = _.pick(request.body, ['email', 'password']);
-
   var user = new User(body);
 
-  user.save().then(function(document)
+  user.save().then(function()
   {
-    response.send(document);
+    return user.generateAuthToken();
+  }).then(function(token)
+  {
+    response.header('x-auth', token).send(user);
   }).catch(function(error)
   {
     response.status(400).send(error);
