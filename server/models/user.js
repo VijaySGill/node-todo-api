@@ -32,7 +32,7 @@ var UserSchema = new mongoose.Schema({
   }]
 });
 
-UserSchema.methods.toJSON = function()
+UserSchema.methods.toJSON = function() // overriding default mongoose toJSON method - we only want to see id and email in POSTMAN response
 {
   var user = this;
   var userObject = user.toObject();
@@ -40,7 +40,7 @@ UserSchema.methods.toJSON = function()
   return _.pick(userObject, ['_id', 'email']);
 };
 
-UserSchema.methods.generateAuthToken = function()
+UserSchema.methods.generateAuthToken = function() // custom method to create and assign token to user once signed up
 {
   var user = this;
   var access = 'auth';
@@ -56,6 +56,28 @@ UserSchema.methods.generateAuthToken = function()
   return user.save().then(function()
   {
     return token;
+  });
+};
+
+UserSchema.statics.findByToken = function(token) // model method, not instance
+{
+  var User = this;
+  var decoded;
+
+  try
+  {
+    decoded = jwt.verify(token, 'abc123');
+  }
+
+  catch(e)
+  {
+    return Promise.reject();
+  }
+
+  return User.findOne({
+    '_id': decoded._id,
+    'tokens.token': token,
+    'tokens.access': 'auth'
   });
 };
 

@@ -8,6 +8,7 @@ const {ObjectID} = require('mongodb');
 var {mongoose} = require('./db/mongoose.js');
 var {Todo} = require('./models/todo.js');
 var {User} = require('./models/user.js');
+var {authenticate} = require('./middleware/authenticate.js');
 
 var app = express();
 const port = process.env.PORT;
@@ -131,7 +132,7 @@ app.patch('/todos/:id', function(request, response)
   });
 });
 
-app.post('/users', function(request, response)
+app.post('/users', function(request, response) // SIGNING UP NEW USERS AND ASSIGNING AUTH TOKEN
 {
   var body = _.pick(request.body, ['email', 'password']);
   var user = new User(body);
@@ -146,6 +147,11 @@ app.post('/users', function(request, response)
   {
     response.status(400).send(error);
   });
+});
+
+app.get('/users/me', authenticate, function(request, response)
+{
+  response.send(request.user)
 });
 
 app.listen(port, function()
