@@ -4,6 +4,7 @@ const {ObjectID} = require('mongodb');
 
 const {app} = require('./../server.js');
 const {Todo} = require('./../models/todo.js');
+const {User} = require('./../models/user.js')
 const {todos, populateTodos, users, populateUsers} = require('./seed/seed.js');
 
 beforeEach(populateUsers);
@@ -211,6 +212,95 @@ describe('PATCH /todos/:id', function()
         expect(response.body.todo.completed).toBe(false);
         expect(response.body.todo.completedAt).toNotExist();
       })
+      .end(done);
+  });
+});
+
+describe('GET /users/me', function()
+{
+  it('should return user if authenticated', function(done)
+  {
+    request(app)
+      .get('/users/me')
+      .set('x-auth', users[0].tokens[0].token)
+      .expect(200)
+      .expect(function(response){
+        expect(response.body._id).toBe(users[0]._id.toHexString());
+        expect(response.body.email).toBe(users[0].email);
+      })
+      .end(done);
+  });
+
+  it('should return 401 if not authenticated', function(done)
+  {
+    request(app)
+      .get('/users/me')
+      .expect(401)
+      .expect(function(response)
+      {
+        expect(response.body).toEqual({});
+      })
+      .end(done);
+  });
+});
+
+describe('POST /users', function()
+{
+  it('should create a valid user', function(done)
+  {
+    var email = 'example@example.com';
+    var password = '123mnb!';
+
+    request(app)
+      .post('/users')
+      .send({
+        email: email,
+        password: password
+      })
+      .expect(200)
+      .expect(function(response)
+      {
+        expect(response.headers['x-auth']).toExist();
+        expect(response.body._id).toExist();
+        expect(response.body.email).toBe(email);
+      })
+      .end(function(error)
+      {
+        if(error)
+        {
+          return done(error);
+        }
+
+        User.findOne({email}).then(function(user)
+        {
+          expect(user).toExist();
+          expect(user.password).toNotBe(password); // because it is hashed
+          done();
+        });
+      });
+  });
+
+  it('should return validation errors if request invalid', function(done)
+  {
+    request(app)
+      .post('/users')
+      .send({
+        email: 'invalid',
+        password: '123'
+      })
+      .expect(400)
+      .end(done);
+  });
+
+  it('should not create user if email already in use', function(done)
+  {
+    request(app)
+      .post('/users')
+      .send({
+        email: users[0].email,
+        password: 'anyPassword'
+      })
+      .expect(400)
       .end(done);
   });
 });
