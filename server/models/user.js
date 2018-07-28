@@ -82,7 +82,7 @@ UserSchema.statics.findByToken = function(token) // model method, not instance
   });
 };
 
-UserSchema.pre('save', function(next)
+UserSchema.pre('save', function(next) // will ensure that our password is hashed and salted before we save user document
 {
   var user = this;
 
