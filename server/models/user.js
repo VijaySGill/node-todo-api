@@ -82,6 +82,35 @@ UserSchema.statics.findByToken = function(token) // model method, not instance
   });
 };
 
+UserSchema.statics.findByCredentials = function(email, password)
+{
+  var User = this;
+
+  return User.findOne({email}).then(function(user)
+  {
+    if(!user)
+    {
+      return Promise.reject();
+    }
+
+    return new Promise(function(resolve, reject)
+    {
+      bcrypt.compare(password, user.password, function(error, response) // user.password will be the hashed password in database
+      {
+        if(response)
+        {
+          resolve(user);
+        }
+
+        else
+        {
+          reject();
+        }
+      });
+    });
+  });
+};
+
 UserSchema.pre('save', function(next) // will ensure that our password is hashed and salted before we save user document
 {
   var user = this;

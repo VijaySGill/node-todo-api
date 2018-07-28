@@ -154,6 +154,24 @@ app.get('/users/me', authenticate, function(request, response)
   response.send(request.user)
 });
 
+
+app.post('/users/login', function(request, response)
+{
+  var body = _.pick(request.body, ['email', 'password']);
+
+  User.findByCredentials(body.email, body.password).then(function(user)
+  {
+    return user.generateAuthToken().then(function(token)
+    {
+      response.header('x-auth', token).send(user); // send generated token to signed-in user
+    });
+  }).catch(function(error)
+  {
+    // fires if no user was returned
+    response.status(400).send();
+  });
+});
+
 app.listen(port, function()
 {
   console.log(`Started up at port ${port}`);
