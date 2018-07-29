@@ -47,7 +47,7 @@ app.get('/todos', authenticate, function(request, response)
   }); // returns every todo
 });
 
-app.get('/todos/:id', function(request, response)
+app.get('/todos/:id', authenticate, function(request, response)
 {
   var id = request.params.id; // request.params returns key value pair where key is :id variable and value is whatever you assign to it
 
@@ -56,7 +56,10 @@ app.get('/todos/:id', function(request, response)
     return response.status(404).send();
   }
 
-  Todo.findById(id).then(function(todo) // returns one object
+  Todo.findOne({
+    _id: id,
+    _creator: request.user._id
+  }).then(function(todo) // returns one object
   {
     if(!todo)
     {
@@ -72,7 +75,7 @@ app.get('/todos/:id', function(request, response)
   });
 });
 
-app.delete('/todos/:id', function(request, response)
+app.delete('/todos/:id', authenticate, function(request, response)
 {
   var id = request.params.id; // request.params returns key value pair where key is :id variable and value is whatever you assign to it
 
@@ -81,7 +84,10 @@ app.delete('/todos/:id', function(request, response)
     return response.status(404).send();
   }
 
-  Todo.findByIdAndRemove(id).then(function(todo) // returns one object - the todo deleted
+  Todo.findOneAndRemove({
+    _id: id,
+    _creator: request.user._id
+  }).then(function(todo) // returns one object - the todo deleted
   {
     if(!todo)
     {
@@ -98,7 +104,7 @@ app.delete('/todos/:id', function(request, response)
   });
 });
 
-app.patch('/todos/:id', function(request, response)
+app.patch('/todos/:id', authenticate, function(request, response)
 {
   var id = request.params.id;
   var body = _.pick(request.body, ['text', 'completed']); // pick is a function that allows you to specify the ONLY properties user can modify on todo ObjectID
@@ -118,7 +124,10 @@ app.patch('/todos/:id', function(request, response)
     body.completedAt = null
   }
 
-  Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then(function(todo)
+  Todo.findOneAndUpdate({
+    _id: id,
+    _creator: request.user._id
+  }, {$set: body}, {new: true}).then(function(todo)
   {
     if(!todo)
     {

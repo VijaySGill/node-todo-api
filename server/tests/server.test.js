@@ -97,11 +97,21 @@ describe('GET /todos/id', function()
   {
     request(app)
       .get(`/todos/${todos[0]._id.toHexString()}`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(200)
       .expect(function(response)
       {
         expect(response.body.todo.text).toBe(todos[0].text);
       })
+      .end(done);
+  });
+
+  it('should not return todo document created by another user', function(done)
+  {
+    request(app)
+      .get(`/todos/${todos[1]._id.toHexString()}`)
+      .set('x-auth', users[0].tokens[0].token) // grab second user todo ID created by user one (which is wrong)
+      .expect(404)
       .end(done);
   });
 
@@ -111,6 +121,7 @@ describe('GET /todos/id', function()
 
     request(app)
       .get(`/todos/${hexID}`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(404)
       .end(done);
   });
@@ -119,6 +130,7 @@ describe('GET /todos/id', function()
   {
     request(app)
       .get(`/todos/123abc`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(404)
       .end(done);
   });
@@ -132,6 +144,7 @@ describe('DELETE /todos/:id', function()
 
     request(app)
       .delete(`/todos/${hexID}`)
+      .set('x-auth', users[1].tokens[0].token)
       .expect(200)
       .expect(function(response)
       {
@@ -155,12 +168,39 @@ describe('DELETE /todos/:id', function()
       });
   });
 
+  it('should not remove a todo created by someone else', function(done)
+  {
+    var hexID = todos[0]._id.toHexString();
+
+    request(app)
+      .delete(`/todos/${hexID}`)
+      .set('x-auth', users[1].tokens[0].token) // trying to delete first todo as second user
+      .expect(404)
+      .end(function(error, result)
+      {
+        if(error)
+        {
+          return done(error);
+        }
+
+        Todo.findById(hexID).then(function(todo)
+        {
+          expect(todo).toExist(); // todo should still exist as we weren't correct user
+          done();
+        }).catch(function(error)
+        {
+          done(error);
+        });
+      });
+  });
+
   it('should return 404 if todo not found', function(done)
   {
     var hexID = new ObjectID().toHexString();
 
     request(app)
       .delete(`/todos/${hexID}`)
+      .set('x-auth', users[1].tokens[0].token)
       .expect(404)
       .end(done);
   });
@@ -169,6 +209,7 @@ describe('DELETE /todos/:id', function()
   {
     request(app)
       .delete(`/todos/123abc`)
+      .set('x-auth', users[1].tokens[0].token)
       .expect(404)
       .end(done);
   });
@@ -183,6 +224,7 @@ describe('PATCH /todos/:id', function()
 
     request(app)
       .patch(`/todos/${hexID}`)
+      .set('x-auth', users[0].tokens[0].token)
       .send({
         completed: true,
         text: text
@@ -195,28 +237,45 @@ describe('PATCH /todos/:id', function()
         expect(response.body.todo.completedAt).toBeA('number');
       })
       .end(done);
-  });
+    });
 
-  it('should clear completedAt when todo is changed to not complete', function(done)
-  {
-    var hexID = todos[1]._id.toHexString(); // second Todo's hex ID
-    var text = "This should be the new text";
+    it('should not update a todo created by another user', function(done)
+    {
+      var hexID = todos[0]._id.toHexString(); // first Todo's hex ID
+      var text = "This should be the new text";
 
-    request(app)
-      .patch(`/todos/${hexID}`)
-      .send({
-        completed: false, // now changing from completed to false
-        text: text
-      })
-      .expect(200)
-      .expect(function(response)
+      request(app)
+        .patch(`/todos/${hexID}`)
+        .set('x-auth', users[1].tokens[0].token)
+        .send({
+          completed: true,
+          text: text
+        })
+        .expect(404)
+        .end(done);
+      });
+
+      it('should clear completedAt when todo is changed to not complete', function(done)
       {
-        expect(response.body.todo.text != todos[1].text);
-        expect(response.body.todo.completed).toBe(false);
-        expect(response.body.todo.completedAt).toNotExist();
-      })
-      .end(done);
-  });
+        var hexID = todos[1]._id.toHexString(); // second Todo's hex ID
+        var text = "This should be the new text";
+
+        request(app)
+        .patch(`/todos/${hexID}`)
+        .set('x-auth', users[1].tokens[0].token)
+        .send({
+          completed: false, // now changing from completed to false
+          text: text
+        })
+        .expect(200)
+        .expect(function(response)
+        {
+          expect(response.body.todo.text != todos[1].text);
+          expect(response.body.todo.completed).toBe(false);
+          expect(response.body.todo.completedAt).toNotExist();
+        })
+        .end(done);
+      });
 });
 
 describe('GET /users/me', function()
@@ -332,7 +391,7 @@ describe('POST /users/login', function()
 
         User.findById(users[1]._id).then(function(user)
         {
-          expect(user.tokens[0]).toInclude({
+          expect(user.tokens[1]).toInclude({
             access: 'auth',
             token: response.headers['x-auth']
           });
@@ -366,7 +425,7 @@ describe('POST /users/login', function()
 
           User.findById(users[1]._id).then(function(user)
           {
-            expect(user.tokens.length).toBe(0);
+            expect(user.tokens.length).toBe(1);
             done();
           }).catch(function(error)
           {
