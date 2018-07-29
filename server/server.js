@@ -172,6 +172,17 @@ app.post('/users/login', function(request, response)
   });
 });
 
+app.delete('/users/me/token', authenticate, function(request, response)
+{
+  request.user.removeToken(request.token).then(function()
+  {
+    response.status(200).send();
+  }, function()
+  {
+    response.status(400).send();
+  });
+});
+
 app.listen(port, function()
 {
   console.log(`Started up at port ${port}`);
