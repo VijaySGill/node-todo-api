@@ -18,6 +18,7 @@ describe('POST /todos', function()
 
     request(app)
       .post('/todos')
+      .set('x-auth', users[0].tokens[0].token)
       .send({
         text: text
       })
@@ -49,6 +50,7 @@ describe('POST /todos', function()
   {
     request(app)
       .post('/todos')
+      .set('x-auth', users[0].tokens[0].token)
       .send({ //sending an EMPTY object
 
       })
@@ -78,10 +80,11 @@ describe('GET /todos', function()
   {
     request(app)
       .get('/todos')
+      .set('x-auth', users[0].tokens[0].token)
       .expect(200)
       .expect(function(response)
       {
-        expect(response.body.todos.length).toBe(2);
+        expect(response.body.todos.length).toBe(1);
       })
 
       .end(done);

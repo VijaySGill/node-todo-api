@@ -15,10 +15,11 @@ const port = process.env.PORT;
 
 app.use(bodyParser.json());
 
-app.post('/todos', function(request, response)
+app.post('/todos', authenticate, function(request, response)
 {
   var todo = new Todo({
-    text: request.body.text
+    text: request.body.text,
+    _creator: request.user._id
   });
 
   todo.save().then(function(document)
@@ -30,9 +31,11 @@ app.post('/todos', function(request, response)
   });
 });
 
-app.get('/todos', function(request, response)
+app.get('/todos', authenticate, function(request, response)
 {
-  Todo.find().then(function(todos)
+  Todo.find({
+    _creator: request.user._id // find all todos created by currently logged-in user
+  }).then(function(todos)
   {
     response.send(
     {
