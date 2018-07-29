@@ -47,7 +47,7 @@ UserSchema.methods.generateAuthToken = function() // custom method to create and
   var access = 'auth';
   var token = jwt.sign({
     _id: user._id.toHexString(),
-    access: access}, 'abc123').toString();
+    access: access}, process.env.JWT_SECRET).toString();
 
   user.tokens = user.tokens.concat([{ // push created token to user token array
     access: access,
@@ -80,7 +80,7 @@ UserSchema.statics.findByToken = function(token) // model method, not instance
 
   try
   {
-    decoded = jwt.verify(token, 'abc123');
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
   }
 
   catch(e)
