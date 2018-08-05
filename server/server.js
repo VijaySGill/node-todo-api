@@ -198,6 +198,8 @@ app.delete('/users/me/token', authenticate, function(request, response)
 app.listen(port, function()
 {
   console.log(`Started up at port ${port}`);
+
+  console.log(process.env.MONGODB_URI);
 });
 
 module.exports = {app};
